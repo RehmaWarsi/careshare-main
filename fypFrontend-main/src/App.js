@@ -67,7 +67,14 @@ function App() {
         <Route path='/signin' element={<Login/>}/>
         <Route path='/signup' element={<SignUp/>}/>
         <Route path='/ask' element={<Ask/>}/>
-        <Route path='/donate' element={<DonateForm/>}/>
+        <Route 
+          path='/donate' 
+          element={
+            <ProtectedRoute>
+              <DonateForm/>
+            </ProtectedRoute>
+          }
+        />
         <Route path='/about' element={<About/>}/>
         <Route path='/contact' element={<Contact/>}/>
         
