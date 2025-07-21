@@ -46,6 +46,7 @@ export default function Ask() {
     name: '',
     email: '',
     address: '',
+    location: '', // <-- Add location field
     medicineName: medicineName,
     medicineQty: 0,
     reason: '',
@@ -55,6 +56,8 @@ export default function Ask() {
   const [prescription, setPrescription] = useState(null);
   const [prescriptionPreview, setPrescriptionPreview] = useState(null);
   const [medicineAvailable, setMedicineAvailable] = useState(true);
+  // State for location loading
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
 
   useEffect(() => {
     // Set initial medicine quantity from URL
@@ -101,10 +104,47 @@ export default function Ask() {
     }
   };
 
+  // Function to capture current GPS coordinates
+  const getCurrentLocation = () => {
+    setIsGettingLocation(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const coordsString = `${latitude},${longitude}`;
+          setFdata((prev) => ({
+            ...prev,
+            location: coordsString,
+            address: coordsString // Optionally set address to coords for consistency
+          }));
+          setIsGettingLocation(false);
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Location Error',
+            text: 'Could not get your current location. Please allow location access and try again.',
+            confirmButtonColor: '#0875b8',
+          });
+          setIsGettingLocation(false);
+        }
+      );
+    } else {
+      Swal.fire({
+        icon: 'error',
+        title: 'Geolocation Not Supported',
+        text: 'Your browser does not support geolocation.',
+        confirmButtonColor: '#0875b8',
+      });
+      setIsGettingLocation(false);
+    }
+  };
+
   const Sendtobackend = async () => {
     // Form validation
-    if (!fdata.name || !fdata.email || !fdata.address || !fdata.phoneNumber) {
-      setErrormsg('All fields are required');
+    if (!fdata.name || !fdata.email || !fdata.address || !fdata.phoneNumber || !fdata.location) {
+      setErrormsg('All fields are required, including current location.');
       return;
     }
     
@@ -128,6 +168,7 @@ export default function Ask() {
       formData.append('name', fdata.name);
       formData.append('email', fdata.email);
       formData.append('address', fdata.address);
+      formData.append('location', fdata.location); // <-- Send location field
       formData.append('medicineName', fdata.medicineName);
       formData.append('medicineQty', fdata.medicineQty);
       formData.append('reason', fdata.reason);
@@ -341,6 +382,26 @@ export default function Ask() {
                       )}
                     </Box>
                   )}
+                </Grid>
+                <Grid item xs={12}>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    onClick={getCurrentLocation}
+                    disabled={isGettingLocation}
+                    startIcon={<CloudUploadIcon />}
+                    sx={{ mb: 2 }}
+                  >
+                    {isGettingLocation ? 'Getting Location...' : 'Capture Current Location'}
+                  </Button>
+                  {fdata.location && (
+                    <Typography variant="body2" color="text.secondary">
+                      <strong>Coordinates:</strong> {fdata.location}
+                    </Typography>
+                  )}
+                  <Typography variant="caption" color="text.secondary">
+                    Click the button to capture your current coordinates (required).
+                  </Typography>
                 </Grid>
               </Grid>
               <Button
